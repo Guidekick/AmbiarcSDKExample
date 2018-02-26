@@ -9,8 +9,8 @@ The project will only run if it is served over http. You can run a server locall
 `python -m SimpleHTTPServer`
 
 You can access each map at the following paths:
-* `/cas/index.html`
-* `/pier/index.html`
+* `/cas/index.html` (California Academy of Sciences in San Francisco)
+* `/pier/index.html` (PIER 39 in San Francisco)
 
 ## Getting started
 
