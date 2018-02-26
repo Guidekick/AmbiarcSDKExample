@@ -18,16 +18,16 @@ You can access each map at the following paths:
 
 ```
 var iframeLoaded = function() {
-//once the iframe loads subscribe to the Ambiarc event
-$("#ambiarcIframe")[0].contentWindow.document.addEventListener('AmbiarcAppInitialized', function() {
-onAmbiarcLoaded();
-});
+    //once the iframe loads subscribe to the Ambiarc event
+    $("#ambiarcIframe")[0].contentWindow.document.addEventListener('AmbiarcAppInitialized', function() {
+        onAmbiarcLoaded();
+        });
 }
 
 var onAmbiarcLoaded = function() {
-var ambiarc = $("#ambiarcIframe")[0].contentWindow.Ambiarc;
-//take action using the ambiarc SDK
-//ambiarc.registerForEvent(ambiarc.eventLabel.RightMouseDown, onRightMouseDown);
+    var ambiarc = $("#ambiarcIframe")[0].contentWindow.Ambiarc;
+    //take action using the ambiarc SDK
+    //ambiarc.registerForEvent(ambiarc.eventLabel.RightMouseDown, onRightMouseDown);
 }
 ```
 
@@ -35,13 +35,13 @@ var ambiarc = $("#ambiarcIframe")[0].contentWindow.Ambiarc;
 
 ```
 var onEnteredFloorSelector = function(event) {
-var buildingId = event.detail;
-console.log("Ambiarc received a FloorSelectorEnabled event with a building of " + buildingId);
+    var buildingId = event.detail;
+    console.log("Ambiarc received a FloorSelectorEnabled event with a building of " + buildingId);
 }
 var onAmbiarcLoaded = function() {
-var ambiarc = $("#ambiarcIframe")[0].contentWindow.Ambiarc;
-//take action using the ambiarc SDK
-ambiarc.registerForEvent(ambiarc.eventLabel.FloorSelectorEnabled, onEnteredFloorSelector);
+    var ambiarc = $("#ambiarcIframe")[0].contentWindow.Ambiarc;
+    //take action using the ambiarc SDK
+    ambiarc.registerForEvent(ambiarc.eventLabel.FloorSelectorEnabled, onEnteredFloorSelector);
 }
 ```
 
@@ -49,23 +49,23 @@ ambiarc.registerForEvent(ambiarc.eventLabel.FloorSelectorEnabled, onEnteredFloor
 
 ```
 var createIconLabel = function() {
-var ambiarc = $("#ambiarcIframe")[0].contentWindow.Ambiarc;
+    var ambiarc = $("#ambiarcIframe")[0].contentWindow.Ambiarc;
 
-// getMapPositionAtCursor is a convenience method provided by the SDK
-ambiarc.getMapPositionAtCursor((vector3) => {
-var mapLabelInfo = {
-buildingId: mainBldgID, //retrieved with getAllBuildings SDK method
-floorId: currentFloorId,  //retrieved with getAllFloors SDK method
-scenePosition: vector3,
-category: 'Label',
-location: 'Default',
-partialPath: 'Information', //used to access default icons
-showOnCreation: true
-};
-ambiarc.createMapLabel(ambiarc.mapLabel.Icon, mapLabelInfo, (labelId) => {
-var mapLabelName = 'Ambiarc Icon Label: ' + poisInScene.length;
-});
-});
+    // getMapPositionAtCursor is a convenience method provided by the SDK
+    ambiarc.getMapPositionAtCursor((vector3) => {
+        var mapLabelInfo = {
+            buildingId: mainBldgID, //retrieved with getAllBuildings SDK method
+            floorId: currentFloorId,  //retrieved with getAllFloors SDK method
+            scenePosition: vector3,
+            category: 'Label',
+            location: 'Default',
+            partialPath: 'Information', //used to access default icons
+            showOnCreation: true
+        };
+        ambiarc.createMapLabel(ambiarc.mapLabel.Icon, mapLabelInfo, (labelId) => {
+            var mapLabelName = 'Ambiarc Icon Label: ' + poisInScene.length;
+        });
+    });
 }
 ```
 
