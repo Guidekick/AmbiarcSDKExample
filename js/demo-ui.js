@@ -1,83 +1,12 @@
  var mainBldgID;
- var poiMenuSelector;
  var isFloorSelectorEnabled = false;
- var poisInScene = [];
+ var floors = {};
  var currentFloorId;
+ var MapLabels = {};
 
- $(document).ready(function() {
-
-   var $body = $(document.body);
-
-   var menu = new BootstrapMenu('#bootstrap', {
-     actions: [{
-       name: 'Label',
-       onClick: function() {
-         createTextLabel();
-         menu.close();
-       }
-     }, {
-       name: 'Icon',
-       onClick: function() {
-         createIconLabel();
-         menu.close();
-       }
-     }, {
-       name: 'Cancel',
-       onClick: function() {
-         menu.close();
-       }
-     }],
-     menuEvent: 'right-click'
-   });
-   poiMenuSelector = menu.$menu[0];
- });
-
- var createTextLabel = function() {
-   var ambiarc = $("#ambiarcIframe")[0].contentWindow.Ambiarc;
-   ambiarc.getMapPositionAtCursor(ambiarc.coordType.gps, (latlon) => {
-     var mapLabelInfo = {
-       buildingId: mainBldgID,
-       floorId: currentFloorId,
-       latitude: latlon.lat,
-       longitude:latlon.lon,
-       label: 'Ambiarc Text Label: ' + poisInScene.length,
-       fontSize: 24,
-       category: 'Label',
-       showOnCreation: true
-     };
-     ambiarc.createMapLabel(ambiarc.mapLabel.Text, mapLabelInfo, (labelId) => {
-       mapLabelCreatedCallback(labelId, mapLabelInfo.label);
-     });
-   });
- }
-
- var createIconLabel = function() {
-   var ambiarc = $("#ambiarcIframe")[0].contentWindow.Ambiarc;
-   ambiarc.getMapPositionAtCursor(ambiarc.coordType.gps, (latlon) => {
-     var mapLabelInfo = {
-       buildingId: mainBldgID,
-       floorId: currentFloorId,
-       latitude: latlon.lat,
-       longitude:latlon.lon,
-       category: 'Label',
-       location: 'Default',
-       partialPath: 'Information',
-       showOnCreation: true
-     };
-     ambiarc.createMapLabel(ambiarc.mapLabel.Icon, mapLabelInfo, (labelId) => {
-       var mapLabelName = 'Ambiarc Icon Label: ' + poisInScene.length;
-       mapLabelCreatedCallback(labelId, mapLabelName);
-     });
-   });
- }
-
- var mapLabelCreatedCallback = function(labelId, labelName) {
-   poisInScene.push(labelId);
-   addElementToPoiList(labelId, labelName);
-   console.log("Added: " + labelId);
- }
-
+//User clicked the floor selector
  var dropdownClicked = function() {
+   //Take action based on the current state of the floor selector
    if (!isFloorSelectorEnabled) {
      $("#levels-dropdown").addClass('open');
      $("#levels-dropdown-button").attr('aria-expanded', true);
@@ -92,12 +21,14 @@
    ambiarc.viewFloorSelector(mainBldgID);
  };
 
+//This method is called when the iframe loads, it subscribes onAmbiarcLoaded so we know when the map loads
  var iframeLoaded = function() {
    $("#ambiarcIframe")[0].contentWindow.document.addEventListener('AmbiarcAppInitialized', function() {
      onAmbiarcLoaded();
    });
  }
 
+//Handler for when the map is ready. This method creates the floor selector and subscribes to events.
  var onAmbiarcLoaded = function() {
    var ambiarc = $("#ambiarcIframe")[0].contentWindow.Ambiarc;
    ambiarc.registerForEvent(ambiarc.eventLabel.RightMouseDown, onRightMouseDown);
@@ -108,29 +39,34 @@
 
    ambiarc.getAllBuildings((bldgs) => {
      mainBldgID = bldgs[0];
-     ambiarc.getAllFloors(mainBldgID, (floors) => {
+     ambiarc.getAllFloors(mainBldgID, (local_floors) => {
        addFloorToFloor(null, mainBldgID, "Exterior");
-       for (f in floors) {
-         addFloorToFloor(floors[f].id, mainBldgID, floors[f].positionName);
+       local_floors.sort(function(a, b) {
+          return b.positionIndex- a.positionIndex;
+        });
+       for (f in local_floors) {
+         floors[local_floors[f].id] = local_floors[f].positionName;
+         addFloorToFloor(local_floors[f].id, mainBldgID, local_floors[f].positionName);
        }
        $('#bootstrap').removeAttr('hidden');
      });
    });
+   //load MapLabels from a preprovided map file
+ //  var full = location.protocol+'//'+location.hostname+(location.port ? ':'+location.port: '')+(window.location.pathname ? window.location.pathname.substring(0,window.location.pathname.lastIndexOf("/")) : '');
+ //  ambiarc.loadRemoteMapLabels(full+"/points.json").then((out) => {
+ //    MapLabels = out;
+ //  });
  }
-
+//Event callback handlers
  var onRightMouseDown = function(event) {
-   $(poiMenuSelector).css('top', $(window).height() - event.detail.pixelY + "px");
-   $(poiMenuSelector).css('left', event.detail.pixelX + "px");
-   if(!isFloorSelectorEnabled)
-   {
-      $('#bootstrap').trigger('contextmenu');
-   }
+
    console.log("Ambiarc received a RightMouseDown event");
  }
 
  var onFloorSelected = function(event) {
    var floorInfo = event.detail;
    currentFloorId = floorInfo.floorId;
+   $("#currentFloor").text(floors[floorInfo.floorId])
    if (isFloorSelectorEnabled) {
      $("#levels-dropdown").removeClass('open');
      $("#levels-dropdown-button").attr('aria-expanded', false);
@@ -176,27 +112,7 @@
    ambiarc.focusOnFloor(mainBldgID, 'L003');
  };
 
- var listPoiClosed = function(mapLabelId) {
-   var ambiarc = $("#ambiarcIframe")[0].contentWindow.Ambiarc;
-   ambiarc.destroyMapLabel(mapLabelId);
-   var index = poisInScene.indexOf(mapLabelId);
-   poisInScene.splice(index, 1);
-   $("#" + mapLabelId).fadeOut(300, function() {
-     $("#" + mapLabelId).remove();
-   });
- };
-
- var addElementToPoiList = function(mapLabelId, mapLabelName) {
-   var item = $("#listPoiTemplate").clone().removeClass("invisible").attr('id', mapLabelId).appendTo($("#listPoiContainer"));
-   item.children("span.poiName").text("" + mapLabelName).on("click", function() {
-     var ambiarc = $("#ambiarcIframe")[0].contentWindow.Ambiarc;
-     ambiarc.focusOnMapLabel(mapLabelId, mapLabelId);
-   });
-   item.children("span.poiExit").on("click", function() {
-     listPoiClosed(mapLabelId)
-   });
- };
-
+//Creates a list item with floor information
  var addFloorToFloor = function(fID, bID, name) {
    var item = $("#floorListTemplate").clone().removeClass("invisible").appendTo($("#floorContainer"));
    item.children("a.floorName").text("" + name).on("click", function() {
@@ -211,3 +127,29 @@
      }
    });
  };
+
+
+//Rotate handlers
+ var rotateLeft = function(){
+    var ambiarc = $("#ambiarcIframe")[0].contentWindow.Ambiarc;
+    ambiarc.rotateCamera(-45, 0.2);
+    $('#rotate_left').removeAttr('onclick');
+    setTimeout(function(){ $('#rotate_left').attr('onclick', 'rotateLeft(this);');  }, 500);
+};
+   var rotateRight = function(){
+   var ambiarc = $("#ambiarcIframe")[0].contentWindow.Ambiarc;
+   ambiarc.rotateCamera(45, 0.2);
+   $('#rotate_right').removeAttr('onclick');
+   setTimeout(function(){ $('#rotate_right').attr('onclick', 'rotateRight(this);'); }, 500);
+};
+
+ var zoomOutHandler = function(){
+    var ambiarc = $("#ambiarcIframe")[0].contentWindow.Ambiarc;
+    ambiarc.zoomCamera(-0.2, 0.3);
+
+};
+var zoomInHandler = function(){
+
+   var ambiarc = $("#ambiarcIframe")[0].contentWindow.Ambiarc;
+   ambiarc.zoomCamera(0.2, 0.3);
+};
